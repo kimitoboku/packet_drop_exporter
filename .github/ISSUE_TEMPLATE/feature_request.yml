@@ -1,0 +1,38 @@
+name: Feature request
+description: Propose a new capability or improvement.
+title: "feature: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What operational or development problem should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the behavior, configuration, and metric semantics you propose.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility and operational impact
+      description: Note cardinality, privileges, kernel support, performance, privacy, and migration concerns.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and the implementation plan.
+          required: true
+        - label: I understand that public metric and label changes require compatibility review.
+          required: true

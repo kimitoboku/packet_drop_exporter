@@ -1,0 +1,19 @@
+listen_address: "127.0.0.1:9435"
+metrics_path: "/metrics"
+collection_interval: "5s"
+
+bpf:
+  max_entries: 8192
+  reason: true
+  location: true
+  protocol: true
+  interface: false
+
+symbolizer:
+  kallsyms_path: "/proc/kallsyms"
+  modules_path: "/proc/modules"
+  module_refresh_interval: "60s"
+
+logging:
+  level: "info"
+  format: "json"

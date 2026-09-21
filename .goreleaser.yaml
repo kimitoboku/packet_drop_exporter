@@ -1,0 +1,59 @@
+version: 2
+
+before:
+  hooks:
+    - go generate ./internal/bpf
+    - go test ./...
+    - go run ./cmd/license-bundle
+
+builds:
+  - id: packet-drop-exporter
+    main: ./cmd/packet-drop-exporter
+    binary: packet-drop-exporter
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+archives:
+  - ids:
+      - packet-drop-exporter
+    formats:
+      - tar.gz
+    files:
+      - LICENSE
+      - README.md
+      - CONTRIBUTING.md
+      - THIRD_PARTY_NOTICES.md
+      - third_party_licenses/**/*
+      - config.example.yaml
+      - packet-drop-exporter.service.example
+      - deploy/prometheus/packet-drop-exporter.rules.yaml
+      - deploy/grafana/packet-drop-exporter.json
+
+checksum:
+  name_template: checksums.txt
+
+sboms:
+  - id: archives
+    artifacts: archive
+
+signs:
+  - cmd: cosign
+    signature: "${artifact}.sigstore.json"
+    args:
+      - sign-blob
+      - "--bundle=${signature}"
+      - "${artifact}"
+      - --yes
+    artifacts: checksum
+
+changelog:
+  sort: asc

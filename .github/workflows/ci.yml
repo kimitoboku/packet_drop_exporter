@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - name: Install BPF toolchain
+        run: sudo apt-get update && sudo apt-get install --yes clang llvm libbpf-dev linux-libc-dev
+      - name: Generate BPF bindings
+        run: go generate ./internal/bpf
+      - name: Unit and race tests
+        run: go test -race ./...
+      - name: Static analysis
+        run: go vet ./...
+      - name: Collect third-party licenses
+        run: go run ./cmd/license-bundle && test -s third_party_licenses/README.md
+      - name: Snapshot benchmark
+        run: go test -run '^$' -bench BenchmarkBuildSnapshot8192Entries -benchmem -count=3 ./internal/collector
+      - name: Build exporter image
+        run: docker build --target exporter -t packet-drop-exporter:ci .

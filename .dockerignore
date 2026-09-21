@@ -1,0 +1,9 @@
+.git
+.gitignore
+bin
+dist
+third_party_licenses
+tmp
+*.log
+internal/bpf/drop_bpf*.go
+internal/bpf/drop_bpf*.o

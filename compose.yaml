@@ -1,0 +1,91 @@
+services:
+  test:
+    build:
+      context: .
+      target: test
+    working_dir: /src
+    command: ["go", "test", "-race", "./..."]
+
+  exporter:
+    profiles: ["integration"]
+    build:
+      context: .
+      target: exporter
+    user: root
+    privileged: true
+    pid: host
+    network_mode: host
+    cap_add:
+      - BPF
+      - PERFMON
+      - SYS_ADMIN
+      - SYSLOG
+    security_opt:
+      - apparmor=unconfined
+    volumes:
+      - type: bind
+        source: /sys/kernel/btf
+        target: /sys/kernel/btf
+        read_only: true
+      - type: bind
+        source: /sys/kernel/debug
+        target: /sys/kernel/debug
+        read_only: false
+    command:
+      - "--web.listen-address=127.0.0.1:9435"
+      - "--log.format=text"
+
+  integration-test:
+    profiles: ["integration-test"]
+    build:
+      context: .
+      target: test
+    working_dir: /src
+    user: root
+    privileged: true
+    pid: host
+    network_mode: host
+    cap_add:
+      - BPF
+      - PERFMON
+      - SYS_ADMIN
+      - SYSLOG
+    security_opt:
+      - apparmor=unconfined
+    volumes:
+      - type: bind
+        source: /sys/kernel/btf
+        target: /sys/kernel/btf
+        read_only: true
+      - type: bind
+        source: /sys/kernel/debug
+        target: /sys/kernel/debug
+        read_only: false
+    command: ["go", "test", "-tags=integration", "-count=1", "./internal/bpf"]
+
+  soak-probe:
+    profiles: ["soak"]
+    image: curlimages/curl:8.10.1
+    network_mode: "service:exporter"
+    depends_on:
+      exporter:
+        condition: service_started
+    environment:
+      SOAK_SECONDS: "${SOAK_SECONDS:-86400}"
+      SOAK_INTERVAL_SECONDS: "${SOAK_INTERVAL_SECONDS:-30}"
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        startup_deadline=$$(($$(date +%s) + 30))
+        until curl -fsS http://127.0.0.1:9435/-/ready >/dev/null 2>&1; do
+          if [ "$$(date +%s)" -ge "$$startup_deadline" ]; then
+            exit 1
+          fi
+          sleep 1
+        done
+        end=$$(($$(date +%s) + SOAK_SECONDS))
+        while [ "$$(date +%s)" -lt "$$end" ]; do
+          curl -fsS http://127.0.0.1:9435/-/ready >/dev/null
+          curl -fsS http://127.0.0.1:9435/metrics | grep -q '^packet_drop_exporter_ready 1'
+          sleep "$$SOAK_INTERVAL_SECONDS"
+        done

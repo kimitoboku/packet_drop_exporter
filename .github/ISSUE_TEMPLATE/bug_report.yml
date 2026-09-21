@@ -1,0 +1,78 @@
+name: Bug report
+description: Report a reproducible defect in packet-drop-exporter.
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a bug. Do not include packet payloads, credentials, private host information, or raw kernel addresses. Report security issues through SECURITY.md instead.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened, and what did you expect instead?
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Exporter version or revision
+      placeholder: v0.1.0 or git commit SHA
+    validations:
+      required: true
+  - type: input
+    id: kernel
+    attributes:
+      label: Kernel
+      description: Include the complete `uname -r` value.
+    validations:
+      required: true
+  - type: input
+    id: distribution
+    attributes:
+      label: Linux distribution and architecture
+      placeholder: Debian 12, arm64
+    validations:
+      required: true
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment method
+      options:
+        - Native binary / systemd
+        - Docker or another container runtime
+        - Local development build
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: configuration
+    attributes:
+      label: Relevant configuration
+      description: Remove secrets and environment-specific identifiers.
+      render: yaml
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs and metrics
+      description: Include only the minimum output needed to explain the issue.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues.
+          required: true
+        - label: This is not a security vulnerability.
+          required: true
+        - label: I removed sensitive data and raw kernel addresses.
+          required: true

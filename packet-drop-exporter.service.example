@@ -1,0 +1,21 @@
+[Unit]
+Description=Linux skb packet drop exporter
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/packet-drop-exporter --config.file=/etc/packet-drop-exporter/config.yaml
+Restart=on-failure
+RestartSec=5s
+
+AmbientCapabilities=CAP_BPF CAP_PERFMON CAP_SYSLOG
+CapabilityBoundingSet=CAP_BPF CAP_PERFMON CAP_SYSLOG
+LimitMEMLOCK=infinity
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

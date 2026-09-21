@@ -1,0 +1,33 @@
+name: Kernel Integration
+
+on:
+  workflow_dispatch:
+    inputs:
+      soak_seconds:
+        description: Soak-test duration in seconds
+        required: true
+        default: "300"
+
+permissions:
+  contents: read
+
+jobs:
+  kernel:
+    runs-on: [self-hosted, linux, bpf]
+    timeout-minutes: 1500
+    steps:
+      - uses: actions/checkout@v7
+      - name: Record kernel features
+        run: uname -a && test -r /sys/kernel/btf/vmlinux && grep -E 'CONFIG_(BPF|BPF_SYSCALL|DEBUG_INFO_BTF)=' /boot/config-$(uname -r) || true
+      - name: Privileged integration tests
+        run: docker compose --profile integration-test run --build --rm integration-test
+      - name: Soak test
+        env:
+          SOAK_SECONDS: ${{ inputs.soak_seconds }}
+        run: docker compose --profile integration --profile soak up --build --abort-on-container-exit --exit-code-from soak-probe exporter soak-probe
+      - name: Exporter logs
+        if: always()
+        run: docker compose --profile integration logs exporter
+      - name: Cleanup
+        if: always()
+        run: docker compose --profile integration --profile soak down --remove-orphans

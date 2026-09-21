@@ -1,0 +1,6 @@
+/bin/
+/third_party_licenses/
+/internal/bpf/drop_bpfel.go
+/internal/bpf/drop_bpfeb.go
+/internal/bpf/drop_bpfel.o
+/internal/bpf/drop_bpfeb.o

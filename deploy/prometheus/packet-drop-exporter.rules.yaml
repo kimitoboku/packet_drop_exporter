@@ -1,0 +1,64 @@
+groups:
+  - name: packet-drop-exporter-recording
+    interval: 30s
+    rules:
+      - record: host:linux_skb_drops:rate5m
+        expr: sum by (instance, reason, location) (rate(linux_skb_drops_total[5m]))
+      - record: host:linux_skb_drop_bytes:rate5m
+        expr: sum by (instance, reason, location) (rate(linux_skb_drop_bytes_total[5m]))
+      - record: host:packet_drop_exporter_bpf_map_utilization:ratio
+        expr: packet_drop_exporter_bpf_map_entries / packet_drop_exporter_bpf_map_max_entries
+
+  - name: packet-drop-exporter-alerts
+    rules:
+      - alert: PacketDropExporterNotReady
+        expr: packet_drop_exporter_ready == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Packet drop exporter is not ready on {{ $labels.instance }}
+          description: The exporter has not had both an attached BPF program and a valid snapshot for five minutes.
+
+      - alert: PacketDropExporterCollectionStale
+        expr: time() - packet_drop_exporter_last_successful_collection_timestamp_seconds > 30
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Packet drop collection is stale on {{ $labels.instance }}
+          description: No successful BPF map collection has completed in more than 30 seconds.
+
+      - alert: PacketDropExporterMapUpdateFailures
+        expr: increase(packet_drop_exporter_map_update_failures_total[5m]) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: Packet drop BPF map is rejecting updates on {{ $labels.instance }}
+          description: New metric series may be missing because the fixed-capacity BPF map could not accept an update.
+
+      - alert: PacketDropExporterMapNearCapacity
+        expr: packet_drop_exporter_bpf_map_entries / packet_drop_exporter_bpf_map_max_entries > 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Packet drop BPF map is near capacity on {{ $labels.instance }}
+          description: More than 80 percent of the configured map entries are in use.
+
+      - alert: PacketDropExporterSymbolizerUnavailable
+        expr: packet_drop_exporter_symbolizer_available == 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Kernel symbolization is unavailable on {{ $labels.instance }}
+          description: Drop collection continues, but locations are grouped under unknown.
+
+      - alert: PacketDropExporterInternalFailures
+        expr: increase(packet_drop_exporter_collection_failures_total[5m]) + increase(packet_drop_exporter_symbol_refresh_failures_total[5m]) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: Packet drop exporter encountered internal failures on {{ $labels.instance }}
+          description: Inspect exporter logs for collection or kernel-symbol refresh errors.
