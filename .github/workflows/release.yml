@@ -24,7 +24,7 @@ jobs:
       - name: Install BPF toolchain
         run: sudo apt-get update && sudo apt-get install --yes clang llvm libbpf-dev linux-libc-dev
       - uses: sigstore/cosign-installer@v4.1.2
-      - uses: anchore/sbom-action/download-syft@v0.24.0
+      - uses: anchore/sbom-action/download-syft@v0.24.3
       - uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
